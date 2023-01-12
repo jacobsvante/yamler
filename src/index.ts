@@ -38,7 +38,6 @@ export function traverseObject(theObject: { [index: string]: any }): boolean {
       const keyString: string = safeString(
         `${parentNodes.join("__")}${parentNodes.length > 0 ? "__" : ""}${key}`
       );
-      console.log(keyString);
       handleString(keyString, theObject[key]);
     } else if (keyType === "object") {
       parentNodes.push(safeString(key));
@@ -67,7 +66,6 @@ export function traverseArray(theArray: Array<any>): boolean {
           theArray.indexOf(elem)
         )}`
       );
-      console.log(keyString);
       handleString(keyString, elem);
     } else if (elemType === "object") {
       parentNodes.push(String(theArray.indexOf(elem)));
@@ -88,13 +86,25 @@ function handleString(key: string, value: string): boolean {
 }
 
 (async () => {
+  const yamlFilePath = core.getInput("yaml-file");
+  let yamlFile: string;
+  let yamlParse: any;
   try {
-    const yamlFilePath = core.getInput("yaml-file");
-    const yamlFile = fs.readFileSync(yamlFilePath, "utf8");
-    const yamlParse = YAML.parse(yamlFile);
-    console.log(`***** Output Variables *****`);
+    yamlFile = fs.readFileSync(yamlFilePath, "utf8");
+  } catch (error) {
+    core.setFailed(`Read YAML file failed: ${error}`);
+    return;
+  }
+  try {
+    yamlParse = YAML.parse(yamlFile);
+  } catch (error) {
+    core.setFailed(`YAML parsing failed: ${error}`);
+    return;
+  }
+  try {
     traverseObject(yamlParse);
   } catch (error) {
-    core.setFailed(`This just happened: ${error.message}`);
+    core.setFailed(`YAML object traversal failed: ${error}`);
+    return;
   }
 })();

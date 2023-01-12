@@ -4,12 +4,19 @@ var __createBinding =
   (Object.create
     ? function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
-        Object.defineProperty(o, k2, {
-          enumerable: true,
-          get: function () {
-            return m[k];
-          },
-        });
+        var desc = Object.getOwnPropertyDescriptor(m, k);
+        if (
+          !desc ||
+          ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)
+        ) {
+          desc = {
+            enumerable: true,
+            get: function () {
+              return m[k];
+            },
+          };
+        }
+        Object.defineProperty(o, k2, desc);
       }
     : function (o, m, k, k2) {
         if (k2 === undefined) k2 = k;
@@ -42,19 +49,21 @@ var __importDefault =
     return mod && mod.__esModule ? mod : { default: mod };
   };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.traverseArray = exports.traverseObject = exports.safeString = void 0;
 const core = __importStar(require("@actions/core"));
 const fs_1 = __importDefault(require("fs"));
 const yaml_1 = __importDefault(require("yaml"));
 let parentNodes = [];
-async function safeString(unsafeString) {
+function safeString(unsafeString) {
   const makeLowerCase = unsafeString.toLowerCase();
   const replaceSpacesEtc = makeLowerCase.replace(/\s|\/|-|\.|:/g, "_");
-  const removeParenthesesEtc = replaceSpacesEtc.replace(/\(|\)|\[|\]/g, "");
+  const removeParenthesesEtc = replaceSpacesEtc.replace(/\(|\)|\[|\]|'|,/g, "");
   const replacePlus = removeParenthesesEtc.replace(/\+/g, "p");
   const replaceSharp = replacePlus.replace(/#/g, "s");
   return replaceSharp;
 }
-async function traverseObject(theObject) {
+exports.safeString = safeString;
+function traverseObject(theObject) {
   for (let key of Object.keys(theObject)) {
     const keyType = typeof theObject[key];
     if (
@@ -63,24 +72,24 @@ async function traverseObject(theObject) {
       keyType === "boolean" ||
       keyType === "bigint"
     ) {
-      const keyString = await safeString(
+      const keyString = safeString(
         `${parentNodes.join("__")}${parentNodes.length > 0 ? "__" : ""}${key}`
       );
-      console.log(keyString);
-      await handleString(keyString, theObject[key]);
+      handleString(keyString, theObject[key]);
     } else if (keyType === "object") {
-      parentNodes.push(await safeString(key));
+      parentNodes.push(safeString(key));
       if (Array.isArray(theObject[key])) {
-        await traverseArray(theObject[key]);
+        traverseArray(theObject[key]);
       } else {
-        await traverseObject(theObject[key]);
+        traverseObject(theObject[key]);
       }
       parentNodes.pop();
     }
   }
   return true;
 }
-async function traverseArray(theArray) {
+exports.traverseObject = traverseObject;
+function traverseArray(theArray) {
   for (let elem of theArray) {
     const elemType = typeof elem;
     if (
@@ -89,37 +98,49 @@ async function traverseArray(theArray) {
       elemType === "boolean" ||
       elemType === "bigint"
     ) {
-      const keyString = await safeString(
+      const keyString = safeString(
         `${parentNodes.join("__")}${parentNodes.length > 0 ? "__" : ""}${String(
           theArray.indexOf(elem)
         )}`
       );
-      console.log(keyString);
-      await handleString(keyString, elem);
+      handleString(keyString, elem);
     } else if (elemType === "object") {
       parentNodes.push(String(theArray.indexOf(elem)));
       if (Array.isArray(elem)) {
-        await traverseArray(elem);
+        traverseArray(elem);
       } else {
-        await traverseObject(elem);
+        traverseObject(elem);
       }
       parentNodes.pop();
     }
   }
   return true;
 }
-async function handleString(key, value) {
+exports.traverseArray = traverseArray;
+function handleString(key, value) {
   core.setOutput(key, value);
   return true;
 }
 (async () => {
+  const yamlFilePath = core.getInput("yaml-file");
+  let yamlFile;
+  let yamlParse;
   try {
-    const yamlFilePath = core.getInput("yaml-file");
-    const yamlFile = fs_1.default.readFileSync(yamlFilePath, "utf8");
-    const yamlParse = yaml_1.default.parse(yamlFile);
-    console.log(`***** Output Variables *****`);
-    await traverseObject(yamlParse);
+    yamlFile = fs_1.default.readFileSync(yamlFilePath, "utf8");
   } catch (error) {
-    core.setFailed(error.message);
+    core.setFailed(`Read YAML file failed: ${error}`);
+    return;
+  }
+  try {
+    yamlParse = yaml_1.default.parse(yamlFile);
+  } catch (error) {
+    core.setFailed(`YAML parsing failed: ${error}`);
+    return;
+  }
+  try {
+    traverseObject(yamlParse);
+  } catch (error) {
+    core.setFailed(`YAML object traversal failed: ${error}`);
+    return;
   }
 })();
