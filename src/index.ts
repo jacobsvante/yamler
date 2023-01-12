@@ -38,6 +38,7 @@ export function traverseObject(theObject: { [index: string]: any }): boolean {
       const keyString: string = safeString(
         `${parentNodes.join("__")}${parentNodes.length > 0 ? "__" : ""}${key}`
       );
+      console.debug(keyString);
       handleString(keyString, theObject[key]);
     } else if (keyType === "object") {
       parentNodes.push(safeString(key));
@@ -66,6 +67,7 @@ export function traverseArray(theArray: Array<any>): boolean {
           theArray.indexOf(elem)
         )}`
       );
+      console.debug(keyString);
       handleString(keyString, elem);
     } else if (elemType === "object") {
       parentNodes.push(String(theArray.indexOf(elem)));
@@ -102,6 +104,7 @@ function handleString(key: string, value: string): boolean {
     return;
   }
   try {
+    console.debug(`***** Output Variables *****`);
     traverseObject(yamlParse);
   } catch (error) {
     core.setFailed(`YAML object traversal failed: ${error}`);

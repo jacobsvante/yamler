@@ -1,4 +1,4 @@
-node_modules/**/*
-*.yaml
-*.yml
-*.md
+**/node_modules
+**/build
+**/coverage
+**/__tests__/*.yaml
