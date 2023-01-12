@@ -54,9 +54,12 @@ jobs:
         run: |
           [[ "${{ steps.yamler.outputs.yaml_resources__yaml_1_2_3rd_edition }}" == "http://yaml.org/spec/1.2/spec.html" ]]
 
-  release-pull-request:
+  release-please:
     runs-on: ubuntu-latest
     needs: [pre-commit, unit-tests, integration-tests]
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: google-github-actions/release-please-action@v3
         id: release
