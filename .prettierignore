@@ -2,3 +2,4 @@
 **/build
 **/coverage
 **/__tests__/*.yaml
+CHANGELOG.md
