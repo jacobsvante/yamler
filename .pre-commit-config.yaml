@@ -12,7 +12,10 @@ default_install_hook_types:
 exclude: |
   (?x)^(
     node_modules/.*|
-    __tests__/.*\.yaml
+    build/.*|
+    coverage/.*|
+    __tests__/.*\.yaml|
+    CHANGELOG.md
   )$
 
 default_stages:
