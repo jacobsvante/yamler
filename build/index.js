@@ -48,7 +48,6 @@ function traverseObject(theObject) {
             keyType === "boolean" ||
             keyType === "bigint") {
             const keyString = safeString(`${parentNodes.join("__")}${parentNodes.length > 0 ? "__" : ""}${key}`);
-            console.debug(keyString);
             handleString(keyString, theObject[key]);
         }
         else if (keyType === "object") {
@@ -73,7 +72,6 @@ function traverseArray(theArray) {
             elemType === "boolean" ||
             elemType === "bigint") {
             const keyString = safeString(`${parentNodes.join("__")}${parentNodes.length > 0 ? "__" : ""}${String(theArray.indexOf(elem))}`);
-            console.debug(keyString);
             handleString(keyString, elem);
         }
         else if (elemType === "object") {
@@ -113,7 +111,6 @@ function handleString(key, value) {
         return;
     }
     try {
-        console.debug(`***** Output Variables *****`);
         traverseObject(yamlParse);
     }
     catch (error) {
